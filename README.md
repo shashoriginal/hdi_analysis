@@ -30,7 +30,7 @@ The HDI Analysis Project is structured into distinct parts, each focusing on a c
 In this project, we emphasize meticulous data handling to ensure the integrity and accuracy of our analysis:
 
 ### Data Import
-- The project utilizes a comprehensive CSV file titled "Human Development Index - Full.csv".
+- The project utilizes a comprehensive CSV file titled "cleaned_HDI_data.csv".
 - We set up a clear path to this file, ensuring seamless data import for analysis.
 
 
@@ -103,7 +103,7 @@ This section marks the beginning of our practical data analysis journey:
 
 ### Setting Up the Analysis Environment
 - Essential R libraries like `tidyverse` are loaded to facilitate data manipulation and visualization.
-- We set the path to our primary data file, "Human Development Index - Full.csv", ensuring smooth data import.
+- We set the path to our primary data file, "cleaned_HDI_data.csv", ensuring smooth data import.
 
 ### Preliminary Data Examination
 - Once loaded, we examine the structure of the dataframe using R's `str()` function.
