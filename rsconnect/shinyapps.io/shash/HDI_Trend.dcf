@@ -1,0 +1,12 @@
+name: HDI_Trend
+title: HDI_Trend
+username: shash
+account: shash
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 10614687
+bundleId: 7982659
+url: https://shash.shinyapps.io/HDI_Trend/
+version: 1
+asMultiple: FALSE
+asStatic: FALSE

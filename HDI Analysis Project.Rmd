@@ -1,0 +1,1418 @@
+---
+title: "HDI Analysis Project"
+author: "Shashank Raj"
+date: "2023-11-04"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message = FALSE, warning = FALSE, echo = TRUE)
+options(warn = -1)
+
+# Custom error handler function
+custom_error_handler <- function() {
+  cat("Continuing with execution...\n")
+}
+
+options(error = custom_error_handler)
+
+```
+
+
+<style>
+  .step-section {
+    background-color: #f8f9fa;
+    border-left: 4px solid #007bff;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 5px;
+  }
+
+  .step-section h2 {
+    color: #007bff;
+    margin-bottom: 15px;
+  }
+
+  .step-section p {
+    color: #212529;
+  }
+</style>
+
+<div class="step-section">
+  <h2>Part 1: Loading the Dataset</h2>
+  <p>
+    Initiate the data analysis process by loading the datasets. This step is crucial for setting the stage for all the analysis work that follows.
+  </p>
+</div>
+
+```{r, results='hide'}
+# Load necessary libraries
+suppressPackageStartupMessages(library(tidyverse))
+
+# Set the path to the CSV file
+file_path <- "Human Development Index - Full.csv"
+
+# Read the CSV file into a dataframe
+hdi_data <- read.csv(file_path, header = TRUE, stringsAsFactors = FALSE)
+
+# Examine the structure of the dataframe
+str(hdi_data)
+
+
+```
+
+<style>
+  .explanation-section {
+    background-color: #f8f9fa;
+    border-left: 4px solid #17a2b8;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 5px;
+  }
+
+  .explanation-section h3 {
+    color: #17a2b8;
+    margin-bottom: 15px;
+  }
+
+  .explanation-section code {
+    background-color: #e9ecef;
+    border-radius: 4px;
+    padding: 2px 4px;
+    font-size: 90%;
+    color: #bd4147;
+  }
+
+  .explanation-section p {
+    color: #212529;
+  }
+</style>
+
+<div class="explanation-section">
+  <h3>Explanation:</h3>
+  <p>
+    We start by loading the <code>tidyverse</code> library, which is a collection of R packages designed for data science.
+  </p>
+  <p>
+    We then set the path to the CSV file.
+  </p>
+  <p>
+    The <code>read.csv()</code> function is used to load the data into an R dataframe named <code>hdi_data</code>. We set <code>stringsAsFactors = FALSE</code> to ensure that string data is read in as character types instead of factors, which is usually more convenient for data cleaning.
+  </p>
+  <p>
+    The <code>str()</code> function provides a detailed structure of the dataframe, including the type of each column and the first few entries.
+  </p>
+</div>
+
+
+
+
+```{r}
+#Creating Interactive Table
+library(DT)
+datatable(hdi_data)
+```
+
+<style>
+  .explanation-section {
+    background-color: #f8f9fa;
+    border-left: 4px solid #17a2b8;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 5px;
+  }
+
+  .explanation-section h3 {
+    color: #17a2b8;
+    margin-bottom: 15px;
+  }
+
+  .explanation-section code {
+    background-color: #e9ecef;
+    border-radius: 4px;
+    padding: 2px 4px;
+    font-size: 90%;
+    color: #bd4147;
+  }
+
+  .explanation-section p {
+    color: #212529;
+  }
+</style>
+
+<div class="explanation-section">
+  <h3>Explanation:</h3>
+  <p>
+    We first check if the <code>DT</code> package is installed and install it if it's not already available.
+  </p>
+  <p>
+    We load the <code>DT</code> library to use the <code>datatable()</code> function.
+  </p>
+  <p>
+    The <code>datatable()</code> function creates an interactive table that allows for searching, filtering, and sorting within the R environment, typically within an R Markdown document or a Shiny app.
+  </p>
+</div>
+
+
+<!-- Part Section Style -->
+<style>
+  .part-section {
+    background-color: #f8f9fa;
+    border-left: 4px solid #28a745;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 5px;
+  }
+
+  .part-section h2 {
+    color: #28a745;
+    margin-bottom: 15px;
+  }
+
+  .part-section p {
+    color: #212529;
+  }
+</style>
+
+<div class="part-section">
+  <h2>Part 2: Handling Missing Values</h2>
+  <p>
+    In this step, we'll assess the missing values in our dataset and decide on a strategy for dealing with them. Strategies can include:
+  </p>
+  <ul>
+    <li>Imputing missing values with the mean or median of the data.</li>
+    <li>Using a model to predict missing values based on other variables.</li>
+    <li>Removing rows or columns with a high percentage of missing data.</li>
+  </ul>
+</div>
+```{r, results='hide'}
+# Install and load necessary package
+if (!requireNamespace("naniar", quietly = TRUE)) {
+  install.packages("naniar")
+}
+
+# Define a threshold for maximum allowable percentage of missing data per column
+threshold <- 0.5 # 50% threshold
+
+# Remove columns with missing data above the threshold
+hdi_data <- hdi_data %>%
+  select_if(~ mean(is.na(.)) < threshold)
+
+# Function to calculate the mode for categorical data
+getmode <- function(v) {
+  uniqv <- unique(na.omit(v))
+  uniqv[which.max(tabulate(match(v, uniqv)))]
+}
+
+# Impute missing values for numerical and categorical data
+hdi_data <- hdi_data %>%
+  mutate(across(where(is.numeric), ~ ifelse(is.na(.), mean(., na.rm = TRUE), .))) %>%
+  mutate(across(where(is.character), ~ ifelse(is.na(.), getmode(.), .)))
+
+# Check the structure after handling missing values
+str(hdi_data)
+
+```
+
+<!-- Explanation Section Style -->
+<style>
+  .explanation-section {
+    background-color: #f8f9fa;
+    border-left: 4px solid #17a2b8;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 5px;
+  }
+
+  .explanation-section h3 {
+    color: #17a2b8;
+    margin-bottom: 15px;
+  }
+
+  .explanation-section code {
+    background-color: #e9ecef;
+    border-radius: 4px;
+    padding: 2px 4px;
+    font-size: 90%;
+    color: #bd4147;
+  }
+
+  .explanation-section p {
+    color: #212529;
+  }
+</style>
+
+<div class="explanation-section">
+  <h3>Explanation:</h3>
+  <p>
+    We use <code>naniar</code> for visualizing missing data.
+  </p>
+  <p>
+    We define a variable <code>threshold</code> that specifies the maximum proportion of missing values allowed in a column for it to be retained.
+  </p>
+  <p>
+    We filter out columns where the proportion of missing values exceeds the threshold using <code>select_if</code>.
+  </p>
+  <p>
+    We create a function <code>getmode</code> to compute the mode of a vector, which is used for imputing missing categorical data.
+  </p>
+  <p>
+    We impute missing values in numerical columns with the column mean and in categorical columns with the column mode using <code>mutate</code> and <code>across</code>.
+  </p>
+  <p>
+    Finally, we check the structure of our data with <code>str</code> to ensure that all columns have the appropriate data types and that missing values have been handled.
+  </p>
+</div>
+
+
+<!-- Part Section Style -->
+<style>
+  .part-section {
+    background-color: #f8f9fa;
+    border-left: 4px solid #28a745;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 5px;
+  }
+
+  .part-section h2 {
+    color: #28a745;
+    margin-bottom: 15px;
+  }
+
+  .part-section p {
+    color: #212529;
+  }
+</style>
+
+<div class="part-section">
+  <h2>Part 3: Data Type Conversion</h2>
+  <p>
+    This phase focuses on the crucial aspect of converting data to the correct type to ensure accurate analysis.
+  </p>
+</div>
+
+```{r, results='hide'}
+# Ensure correct data types for each column
+
+# For numerical columns - convert factors or characters to numeric if necessary
+hdi_data <- hdi_data %>%
+  mutate(across(where(is.character), ~ as.numeric(as.character(.)), .names = "numeric_{.col}"))
+
+# For categorical columns - convert characters to factors if necessary
+hdi_data <- hdi_data %>%
+  mutate(across(where(is.character), as.factor, .names = "factor_{.col}"))
+
+# For date columns - convert characters to Date objects if necessary
+# hdi_data <- hdi_data %>%
+#   mutate(Date_Column = as.Date(Date_Column, format="%Y-%m-%d"))
+
+# Check the updated structure after conversions
+str(hdi_data)
+
+```
+
+<!-- Explanation Section Style -->
+<style>
+  .explanation-section {
+    background-color: #f8f9fa;
+    border-left: 4px solid #17a2b8;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 5px;
+  }
+
+  .explanation-section h3 {
+    color: #17a2b8;
+    margin-bottom: 15px;
+  }
+
+  .explanation-section code {
+    background-color: #e9ecef;
+    border-radius: 4px;
+    padding: 2px 4px;
+    font-size: 90%;
+    color: #bd4147;
+  }
+
+  .explanation-section p {
+    color: #212529;
+  }
+</style>
+
+<div class="explanation-section">
+  <h3>Explanation:</h3>
+  <p>
+    We use <code>mutate()</code> and <code>across()</code> functions from the <code>dplyr</code> package to convert the data types.
+  </p>
+  <p>
+    For numerical columns, if they are mistakenly read as factors or characters, we convert them to numeric using <code>as.numeric()</code> after ensuring they are characters with <code>as.character()</code>. This step is crucial to prevent the unintended conversion of factor levels to their underlying integer codes.
+  </p>
+  <p>
+    For categorical data, we transform character columns to factors with <code>as.factor()</code>, which facilitates various analyses, especially in statistical modeling.
+  </p>
+  <p>
+    Date columns, if present, are converted from characters to Date objects with <code>as.Date()</code>, applying the appropriate date format.
+  </p>
+  <p>
+    Post-conversion, we verify the dataframe's structure with <code>str()</code> to confirm the data types are correctly adjusted.
+  </p>
+  <p>
+    It's noteworthy that converting characters to numeric will yield <code>NA</code> for non-numeric strings. It is vital to convert only those columns that are assuredly numeric values in string format.
+  </p>
+</div>
+
+
+<!-- Visualization Section Style -->
+<style>
+  .visualization-section {
+    background-color: #f8f9fa;
+    border-left: 4px solid #ffc107;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 5px;
+  }
+
+  .visualization-section h2 {
+    color: #ffc107;
+    margin-bottom: 15px;
+  }
+
+  .visualization-section p {
+    color: #212529;
+  }
+</style>
+
+<div class="visualization-section">
+  <h2>Visualization</h2>
+  <p>
+    Loading the further cleaned file, wherein every column name is in lowercase and without any spaces.
+  </p>
+</div>
+
+```{r}
+# Set the path to the CSV file
+file_path <- "cleaned_HDI_data.csv"
+
+# Read the CSV file into a dataframe
+cleaned_hdi_data <- read.csv(file_path, header = TRUE, stringsAsFactors = FALSE)
+```
+
+
+<!-- Visualization Subsection Style -->
+<style>
+  .visualization-subsection {
+    background-color: #f8f9fa;
+    border-left: 4px solid #17a2b8;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 5px;
+  }
+
+  .visualization-subsection h3 {
+    color: #17a2b8;
+    margin-bottom: 15px;
+  }
+
+  .visualization-subsection p {
+    color: #212529;
+  }
+</style>
+
+<div class="visualization-subsection">
+  <h3>1. Interactive Scatter Plot of CO2 Emissions vs. Material Footprint</h3>
+  <p>
+    This plot will show the relationship between CO2 emissions per capita and the material footprint per capita for the latest available year (2021).
+  </p>
+</div>
+
+```{r}
+library(ggplot2)
+library(plotly)
+
+# Assuming 'cleaned_hdi_data' is your dataframe
+p <- ggplot(cleaned_hdi_data, aes(x = carbondioxideemissionspercapitaproductiontonnes2021, 
+                                  y = materialfootprintpercapitatonnes2021)) +
+  geom_point(aes(text = paste("Country:", factor_country)), size = 2) + 
+  theme_minimal() +
+  labs(title = "CO2 Emissions vs. Material Footprint (2021)",
+       x = "CO2 Emissions Per Capita (tonnes)",
+       y = "Material Footprint Per Capita (tonnes)")
+
+# Convert to interactive plot
+p_interactive <- ggplotly(p, tooltip = "text")
+
+p_interactive
+
+```
+
+
+<!-- Visualization Subsection Style -->
+<style>
+  .visualization-subsection {
+    background-color: #f8f9fa;
+    border-left: 4px solid #17a2b8;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 5px;
+  }
+
+  .visualization-subsection h3 {
+    color: #17a2b8;
+    margin-bottom: 15px;
+  }
+
+  .visualization-subsection p {
+    color: #212529;
+  }
+</style>
+
+<div class="visualization-subsection">
+  <h3>2. Interactive 3D Scatter Plot</h3>
+  <p>
+    This plot will create a 3D scatter plot of life expectancy, education, and GNI per capita.
+  </p>
+</div>
+
+
+```{r}
+library(plotly)
+
+# 3D scatter plot for life expectancy, education, and GNI per capita for the year 2021
+p <- plot_ly(cleaned_hdi_data, 
+             x = ~expectedyearsofschoolingmale2021, 
+             y = ~lifeexpectancyatbirth2021, 
+             z = ~grossnationalincomepercapita2021,  # Updated with the correct column name
+             type = 'scatter3d', 
+             mode = 'markers',
+             marker = list(size = 3),
+             text = ~country)  # Updated with the correct column name for countries
+
+p
+
+```
+
+
+<!-- Visualization Subsection Style -->
+<style>
+  .visualization-subsection {
+    background-color: #f8f9fa;
+    border-left: 4px solid #17a2b8;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 5px;
+  }
+
+  .visualization-subsection h3 {
+    color: #17a2b8;
+    margin-bottom: 15px;
+  }
+
+  .visualization-subsection p {
+    color: #212529;
+  }
+</style>
+
+<div class="visualization-subsection">
+  <h3>3. Interactive Bar Chart of GNI Per Capita by Country for 2021</h3>
+  <p>
+    This section will focus on creating an interactive bar chart that represents the Gross National Income (GNI) per capita for different countries in the year 2021.
+  </p>
+</div>
+
+```{r}
+library(plotly)
+
+# Create a bar chart for GNI per capita for the year 2021
+gni_bar_chart <- plot_ly(cleaned_hdi_data, x = ~country, y = ~grossnationalincomepercapita2021, type = 'bar', text = ~country)
+
+gni_bar_chart
+
+```
+
+<!-- Description Subsection Style -->
+<style>
+  .description-subsection {
+    background-color: #f8f9fa;
+    border-left: 4px solid #17a2b8;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 5px;
+  }
+
+  .description-subsection h3 {
+    color: #17a2b8;
+    margin-bottom: 15px;
+  }
+
+  .description-subsection p {
+    color: #212529;
+  }
+</style>
+
+<div class="description-subsection">
+  <h3>Description:</h3>
+  <p>
+    This plot is an interactive bar chart showing the Gross National Income (GNI) per capita for different countries in the year 2021. Each bar represents a country, and the height indicates the GNI per capita value.
+  </p>
+</div>
+
+<!-- Visualization Subsection Style -->
+<style>
+  .visualization-subsection {
+    background-color: #f8f9fa;
+    border-left: 4px solid #17a2b8;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 5px;
+  }
+
+  .visualization-subsection h3 {
+    color: #17a2b8;
+    margin-bottom: 15px;
+  }
+
+  .visualization-subsection p {
+    color: #212529;
+  }
+</style>
+
+<div class="visualization-subsection">
+  <h3>4. Interactive Line Plot of Life Expectancy Over Time by Country</h3>
+  <p>
+    This visualization will present an interactive line plot, illustrating the trends in life expectancy across various countries over time.
+  </p>
+</div>
+
+```{r}
+library(plotly)
+library(dplyr)
+library(tidyr)
+
+# Pivot the life expectancy data to have a long format
+life_expectancy_data <- cleaned_hdi_data %>%
+  select(country, starts_with("lifeexpectancyatbirth")) %>%
+  gather(key = "year", value = "life_expectancy", -country) %>%
+  mutate(year = as.numeric(gsub("lifeexpectancyatbirth", "", year)))
+
+# Create the interactive line plot
+life_expectancy_plot <- plot_ly(life_expectancy_data, x = ~year, y = ~life_expectancy, color = ~country, type = 'scatter', mode = 'lines')
+
+life_expectancy_plot
+
+```
+
+
+<!-- Description Subsection Style -->
+<style>
+  .description-subsection {
+    background-color: #f8f9fa;
+    border-left: 4px solid #17a2b8;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 5px;
+  }
+
+  .description-subsection h3 {
+    color: #17a2b8;
+    margin-bottom: 15px;
+  }
+
+  .description-subsection p {
+    color: #212529;
+  }
+</style>
+
+<div class="description-subsection">
+  <h3>Description:</h3>
+  <p>
+    This visualization shows the trend of life expectancy at birth for all countries over the available years. Each line represents a different country, and the user can hover over the plot to see the exact values.
+  </p>
+</div>
+
+<!-- Visualization Subsection Style -->
+<style>
+  .visualization-subsection {
+    background-color: #f8f9fa;
+    border-left: 4px solid #17a2b8;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 5px;
+  }
+
+  .visualization-subsection h3 {
+    color: #17a2b8;
+    margin-bottom: 15px;
+  }
+
+  .visualization-subsection p {
+    color: #212529;
+  }
+</style>
+
+<div class="visualization-subsection">
+  <h3>5. Interactive 3D Scatter Plot of HDI Components</h3>
+  <p>
+    This interactive visualization will plot the components of the Human Development Index (HDI) in a three-dimensional space, allowing for an immersive exploration of the data.
+  </p>
+</div>
+
+```{r}
+library(plotly)
+
+# Create a 3D scatter plot with HDI components: Life Expectancy, Education, and GNI
+hdi_3d_scatter <- plot_ly(cleaned_hdi_data, 
+                          x = ~lifeexpectancyatbirth2021, 
+                          y = ~meanyearsofschooling2021, 
+                          z = ~grossnationalincomepercapita2021, 
+                          color = ~humandevelopmentindex2021, 
+                          text = ~country,
+                          type = 'scatter3d', 
+                          mode = 'markers')
+
+hdi_3d_scatter
+
+```
+
+<style>
+  .description-subsection {
+    background-color: #f8f9fa;
+    border-left: 4px solid #17a2b8;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 5px;
+  }
+
+  .description-subsection h3 {
+    color: #17a2b8;
+    margin-bottom: 15px;
+  }
+
+  .description-subsection p {
+    color: #212529;
+  }
+</style>
+
+<div class="description-subsection">
+  <h3>Description:</h3>
+  <p>
+    This plot creates a 3D scatter diagram that visualizes the three components of the Human Development Index (HDI): life expectancy at birth, mean years of schooling, and GNI per capita. The color of the markers represents the HDI value for 2021, offering a vivid depiction of each country's development status.
+  </p>
+</div>
+
+
+<!-- Visualization Subsection Style -->
+<style>
+  .visualization-subsection {
+    background-color: #f8f9fa;
+    border-left: 4px solid #17a2b8;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 5px;
+  }
+
+  .visualization-subsection h3 {
+    color: #17a2b8;
+    margin-bottom: 15px;
+  }
+
+  .visualization-subsection p {
+    color: #212529;
+  }
+</style>
+
+<div class="visualization-subsection">
+  <h3>6. Interactive Choropleth Map of HDI by Country</h3>
+  <p>
+    The forthcoming interactive map will illustrate the Human Development Index (HDI) across countries, providing a geographical perspective on global human development levels.
+  </p>
+</div>
+
+<!-- Visualization Subsection Style -->
+<style>
+  .visualization-subsection {
+    background-color: #f8f9fa;
+    border-left: 4px solid #17a2b8;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 5px;
+  }
+
+  .visualization-subsection h3 {
+    color: #17a2b8;
+    margin-bottom: 15px;
+  }
+
+  .visualization-subsection p {
+    color: #212529;
+  }
+</style>
+
+<div class="visualization-subsection">
+  <h3>7. Interactive Choropleth Map of HDI by Country</h3>
+  <p>
+    The forthcoming interactive map will illustrate the Human Development Index (HDI) across countries, providing a geographical perspective on global human development levels.
+  </p>
+</div>
+
+```{r}
+library(plotly)
+
+hdi_map <- plot_geo(cleaned_hdi_data, locationmode = 'ISO-3', locations = ~iso3, z = ~humandevelopmentindex2021, text = ~country, colors = "Blues")
+
+hdi_map
+
+```
+
+
+<!-- Description Subsection Style -->
+<style>
+  .description-subsection {
+    background-color: #f8f9fa;
+    border-left: 4px solid #17a2b8;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 5px;
+  }
+
+  .description-subsection h3 {
+    color: #17a2b8;
+    margin-bottom: 15px;
+  }
+
+  .description-subsection p {
+    color: #212529;
+  }
+</style>
+
+<div class="description-subsection">
+  <h3>Description:</h3>
+  <p>
+    This visualization is an interactive choropleth map showing the Human Development Index by country for the year 2021. Countries are shaded based on their HDI value, providing a quick visual indication of human development across the globe. The map's interactivity allows for engagement with the data, offering insights into the HDI of each country upon interaction.
+  </p>
+</div>
+
+<!-- Trend Analysis Subsection Style -->
+<style>
+  .trend-analysis-subsection {
+    background-color: #f8f9fa;
+    border-left: 4px solid #17a2b8;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 5px;
+  }
+
+  .trend-analysis-subsection h3 {
+    color: #17a2b8;
+    margin-bottom: 15px;
+  }
+
+  .trend-analysis-subsection p {
+    color: #212529;
+  }
+</style>
+
+<div class="trend-analysis-subsection">
+  <h3>Trend Analysis with Linear Models:</h3>
+  <p>
+    How has the Human Development Index (HDI) of a specific country (or a set of countries) changed over the years? This question can be addressed using linear regression to model the trend of HDI over time.
+  </p>
+</div>
+
+```{r}
+library(shiny)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+hdi_data <- read.csv("cleaned_HDI_data.csv")
+ui <- fluidPage(
+    titlePanel("HDI Trend Analysis"),
+    sidebarLayout(
+        sidebarPanel(
+            selectInput("countryInput", 
+                        "Select Country:", 
+                        choices = unique(hdi_data$country),
+                        selected = "United States",
+                        multiple = TRUE),
+            sliderInput("yearRange", 
+                        "Select Year Range:",
+                        min = 1990, 
+                        max = 2021, 
+                        value = c(1990, 2021),
+                        step = 1)
+        ),
+        mainPanel(
+            plotOutput("hdiTrendPlot")
+        )
+    )
+)
+
+server <- function(input, output) {
+    output$hdiTrendPlot <- renderPlot({
+        filtered_data <- hdi_data %>%
+            filter(country %in% input$countryInput) %>%
+            select(c("country", paste0("humandevelopmentindex", 1990:2021))) %>%
+            pivot_longer(cols = starts_with("humandevelopmentindex"), 
+                         names_to = "year", 
+                         values_to = "hdi") %>%
+            mutate(year = as.numeric(sub("humandevelopmentindex", "", year))) %>%
+            filter(year >= input$yearRange[1] & year <= input$yearRange[2])
+
+        ggplot(filtered_data, aes(x = year, y = hdi, group = country, color = country)) +
+            geom_line() +
+            geom_point() +
+            theme_minimal() +
+            labs(title = "HDI Trend Over Time",
+                 x = "Year",
+                 y = "Human Development Index (HDI)") +
+            theme(legend.title = element_blank())
+    })
+}
+shinyApp(ui, server)
+cat("Execution continues...\n")
+```
+
+<!-- Citation Subsection Style -->
+<style>
+  .citation-subsection {
+    background-color: #f8f9fa;
+    border-left: 4px solid #17a2b8;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 5px;
+  }
+
+  .citation-subsection h3 {
+    color: #17a2b8;
+    margin-bottom: 15px;
+  }
+
+  .citation-subsection p {
+    color: #212529;
+  }
+</style>
+
+<div class="citation-subsection">
+  <h3>Citation:</h3>
+  <p>
+    This analysis was conducted with reference to the Shiny app available at <a href="https://shiny.posit.co/r/articles/share/shinyapps/" target="_blank">https://shiny.posit.co/r/articles/share/shinyapps/</a>, accessed on 21st November 2023.
+  </p>
+</div>
+
+
+<!-- User Interface Description Subsection Style -->
+<style>
+  .ui-description-subsection {
+    background-color: #f8f9fa;
+    border-left: 4px solid #17a2b8;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 5px;
+  }
+
+  .ui-description-subsection h3 {
+    color: #17a2b8;
+    margin-bottom: 15px;
+  }
+
+  .ui-description-subsection ul {
+    color: #212529;
+    list-style-type: disc;
+    margin-left: 20px;
+  }
+
+  .ui-description-subsection p {
+    color: #212529;
+  }
+</style>
+
+<!-- Methodology Description Subsection Style -->
+<style>
+  .methodology-description-subsection {
+    background-color: #f8f9fa;
+    border-left: 4px solid #17a2b8;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 5px;
+  }
+
+  .methodology-description-subsection h3 {
+    color: #17a2b8;
+    margin-bottom: 15px;
+  }
+
+  .methodology-description-subsection ul {
+    color: #212529;
+    list-style-type: disc;
+    margin-left: 20px;
+  }
+
+  .methodology-description-subsection p {
+    color: #212529;
+  }
+</style>
+
+<!-- User Interface Description -->
+<div class="ui-description-subsection">
+  <h3>Description of the User Interface:</h3>
+  <ul>
+    <li><strong>Select Country:</strong> There is a dropdown box labeled "Select Country," which is currently set to "United States." This suggests that the user can select the country for which they want to see HDI data.</li>
+    <li><strong>Select Year Range:</strong> Below the country selector is a year range slider labeled "Select Year Range," which spans from 1990 to 2021. The user can adjust this slider to focus on a specific timeframe within the given range.</li>
+    <li><strong>HDI Trend Over Time Plot:</strong> The main panel of the application displays a line graph titled "HDI Trend Over Time." The x-axis represents the year, and the y-axis represents the Human Development Index. The line graph, with data points connected by lines, traces the HDI values of the United States from 1990 to 2021. The plot shows an overall upward trend with some fluctuations, indicating improvements in the HDI over time. The most recent data point shows a decline, which could prompt further investigation.</li>
+  </ul>
+</div>
+
+<!-- Methodology Description -->
+<div class="methodology-description-subsection">
+  <h3>Methodology and Techniques Used:</h3>
+  <ul>
+    <li><strong>Data Representation:</strong> The HDI data is represented as a time series, where each point on the line graph corresponds to the HDI of the United States for a given year.</li>
+    <li><strong>Shiny Application Components:</strong>
+      <ul>
+        <li><code>ui</code> (User Interface): Defines the layout and appearance of the app, including input controls like dropdowns and sliders.</li>
+        <li><code>server</code>: Contains the server logic that processes user inputs, retrieves corresponding data, and generates the output plot.</li>
+        <li><code>reactive</code>: The underlying reactivity system in Shiny automatically updates the output when user inputs change.</li>
+      </ul>
+      
+<!-- Comparative Analysis Description Subsection Style -->
+<style>
+  .comparative-analysis-subsection {
+    background-color: #f8f9fa;
+    border-left: 4px solid #17a2b8;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 5px;
+  }
+
+  .comparative-analysis-subsection h3 {
+    color: #17a2b8;
+    margin-bottom: 15px;
+  }
+
+  .comparative-analysis-subsection ul {
+    color: #212529;
+    list-style-type: disc;
+    margin-left: 20px;
+  }
+
+  .comparative-analysis-subsection p {
+    color: #212529;
+  }
+</style>
+
+<!-- Comparative Analysis Description -->
+<div class="comparative-analysis-subsection">
+  <h3>Comparative Analysis of Development Groups:</h3>
+  <p>
+    Can we predict the human development group (e.g., Low, Medium, High, Very High) of a country based on selected indicators like GDP, education index, and health index using KNN?
+  </p>
+</div>
+
+```{r}
+library(shiny)
+library(class)
+library(dplyr)
+library(tidyr)
+ui <- fluidPage(
+    titlePanel("KNN for HDI Groups Prediction"),
+    sidebarLayout(
+        sidebarPanel(
+            numericInput("income", "Enter Gross National Income per Capita for 2021:", value = 10000),
+            numericInput("education", "Enter Expected Years of Schooling for 2021:", value = 12),
+            numericInput("lifeExpectancy", "Enter Life Expectancy at Birth for 2021:", value = 70),
+            sliderInput("neighbors", "Number of Neighbors (k):", min = 1, max = 50, value = 5),
+            actionButton("predict", "Predict Development Group")
+        ),
+        mainPanel(
+            textOutput("prediction")
+        )
+    )
+)
+
+server <- function(input, output) {
+    modelData <- reactive({
+        hdi_data %>%
+            select(grossnationalincomepercapita2021, expectedyearsofschooling2021, lifeexpectancyatbirth2021, humandevelopmentgroups) %>%
+            na.omit()
+    })
+    
+    observeEvent(input$predict, {
+        newdata <- data.frame(
+            grossnationalincomepercapita2021 = input$income,
+            expectedyearsofschooling2021 = input$education,
+            lifeexpectancyatbirth2021 = input$lifeExpectancy
+        )
+        
+        if (any(sapply(newdata, is.na))) {
+            output$prediction <- renderText("Please fill all input fields.")
+        } else {
+            set.seed(123)
+            knn_result <- knn(
+                train = modelData()[,1:3],
+                test = newdata,
+                cl = modelData()$humandevelopmentgroups,
+                k = input$neighbors
+            )
+            output$prediction <- renderText(paste("Predicted Development Group:", knn_result))
+        }
+    })
+}
+
+shinyApp(ui, server)
+cat("Execution continues...\n")
+```
+
+<!-- Shiny App Interface Description Subsection Style -->
+<style>
+  .app-interface-description-subsection {
+    background-color: #f8f9fa;
+    border-left: 4px solid #17a2b8;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 5px;
+  }
+
+  .app-interface-description-subsection h3 {
+    color: #17a2b8;
+    margin-bottom: 15px;
+  }
+
+  .app-interface-description-subsection ul {
+    color: #212529;
+    list-style-type: disc;
+    margin-left: 20px;
+  }
+
+  .app-interface-description-subsection p {
+    color: #212529;
+  }
+</style>
+
+<!-- Methodology Description Subsection Style -->
+<style>
+  .methodology-description-subsection {
+    background-color: #f8f9fa;
+    border-left: 4px solid #17a2b8;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 5px;
+  }
+
+  .methodology-description-subsection h3 {
+    color: #17a2b8;
+    margin-bottom: 15px;
+  }
+
+  .methodology-description-subsection ul {
+    color: #212529;
+    list-style-type: disc;
+    margin-left: 20px;
+  }
+
+  .methodology-description-subsection p {
+    color: #212529;
+  }
+</style>
+
+<!-- Methodology Description -->
+<div class="methodology-description-subsection">
+  <h3>Methodology Used:</h3>
+  <ul>
+    <li><strong>KNN Algorithm</strong>: The application uses the KNN algorithm to classify the input parameters into human development groups. KNN is a simple, non-parametric algorithm that predicts the class of a data point by looking at the 'k' closest labeled data points and taking a majority vote.</li>
+    <li><strong>Data Normalization</strong>: Before applying KNN, the data is usually normalized because KNN is sensitive to the magnitude of the data points and their distances from each other.</li>
+    <li><strong>Parameter Selection</strong>: The user selects the parameters that are believed to influence the Human Development Group, such as income, education, and life expectancy.</li>
+    <li><strong>Interactive Prediction</strong>: The app allows for real-time predictions based on user input, showcasing the interactive capability of Shiny apps to provide dynamic analyses.</li>
+    <li><strong>Shiny Server-Client Architecture</strong>: The Shiny app uses a server-client model where the user interface is rendered on the client side, and the server side (written in R) handles the data processing and model prediction.</li>
+  </ul>
+</div>
+
+<!-- Education-HDI Relationship Description Subsection Style -->
+<style>
+  .education-hdi-relationship-subsection {
+    background-color: #f8f9fa;
+    border-left: 4px solid #17a2b8;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 5px;
+  }
+
+  .education-hdi-relationship-subsection h3 {
+    color: #17a2b8;
+    margin-bottom: 15px;
+  }
+
+  .education-hdi-relationship-subsection p {
+    color: #212529;
+  }
+</style>
+
+<!-- Education-HDI Relationship Description -->
+<div class="education-hdi-relationship-subsection">
+  <h3>Relationship Between Education and HDI:</h3>
+  <p>
+    Is there a linear relationship between the average years of schooling and the HDI of a country? This can be explored using a linear regression model.
+  </p>
+</div>
+
+```{r}
+library(ggplot2)
+library(plotly)
+hdi_data <- read.csv("cleaned_HDI_data.csv")
+
+# Subset the data for the most recent year available in your dataset
+hdi_data_recent <- hdi_data %>%
+  select(meanyearsofschooling2021, humandevelopmentindex2021) %>%
+  na.omit()  # Exclude missing values
+
+# Fit linear regression model
+model <- lm(humandevelopmentindex2021 ~ meanyearsofschooling2021, data = hdi_data_recent)
+
+# Create a ggplot2 scatter plot with a regression line
+p <- ggplot(hdi_data_recent, aes(x = meanyearsofschooling2021, y = humandevelopmentindex2021)) +
+  geom_point() +
+  geom_smooth(method = "lm", col = "blue") +
+  labs(title = "Relationship Between Average Years of Schooling and HDI",
+       x = "Average Years of Schooling in 2021",
+       y = "Human Development Index in 2021") +
+  theme_minimal()
+
+# Convert the ggplot2 object to an interactive plotly object
+p_interactive <- ggplotly(p)
+p_interactive
+cat("Execution continues...\n")
+```
+
+<!-- Visualization Components Description Subsection Style -->
+<style>
+  .visualization-components-subsection {
+    background-color: #f8f9fa;
+    border-left: 4px solid #17a2b8;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 5px;
+  }
+
+  .visualization-components-subsection h3 {
+    color: #17a2b8;
+    margin-bottom: 15px;
+  }
+
+  .visualization-components-subsection ul {
+    color: #212529;
+    list-style-type: disc;
+    margin-left: 20px;
+  }
+
+  .visualization-components-subsection p {
+    color: #212529;
+  }
+</style>
+
+<!-- Interactive Features Description Subsection Style -->
+<style>
+  .interactive-features-subsection {
+    background-color: #f8f9fa;
+    border-left: 4px solid #17a2b8;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 5px;
+  }
+
+  .interactive-features-subsection h3 {
+    color: #17a2b8;
+    margin-bottom: 15px;
+  }
+
+  .interactive-features-subsection ul {
+    color: #212529;
+    list-style-type: disc;
+    margin-left: 20px;
+  }
+
+  .interactive-features-subsection p {
+    color: #212529;
+  }
+</style>
+
+<!-- Methodology Description Subsection Style -->
+<style>
+  .methodology-description-subsection {
+    background-color: #f8f9fa;
+    border-left: 4px solid #17a2b8;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 5px;
+  }
+
+  .methodology-description-subsection h3 {
+    color: #17a2b8;
+    margin-bottom: 15px;
+  }
+
+  .methodology-description-subsection ul {
+    color: #212529;
+    list-style-type: disc;
+    margin-left: 20px;
+  }
+
+  .methodology-description-subsection p {
+    color: #212529;
+  }
+</style>
+
+<!-- Visualization Components Description -->
+<div class="visualization-components-subsection">
+  <h3>Visualization Components:</h3>
+  <ul>
+    <li><strong>Scatter Plot</strong>: Each point on the plot represents a country, with its position determined by the country's average years of schooling (on the x-axis) and its HDI value (on the y-axis).</li>
+    <li><strong>Regression Line</strong>: A blue line is superimposed on the scatter plot, representing the best-fit linear regression line. This line is the result of a statistical model that estimates the relationship between the two variables, suggesting how changes in the average years of schooling are associated with changes in HDI.</li>
+    <li><strong>Axes</strong>:
+      <ul>
+        <li>The x-axis is labeled "Average Years of Schooling in 2021", which represents the independent variable.</li>
+        <li>The y-axis is labeled "Human Development Index in 2021", representing the dependent variable.</li>
+      </ul>
+    </li>
+    <li><strong>Title</strong>: The title of the plot is "Relationship Between Average Years of Schooling and HDI", which clearly indicates the plot's focus.</li>
+    <li><strong>Theme</strong>: A minimalistic theme is applied to the plot to ensure that the data stands out without unnecessary visual clutter.</li>
+  </ul>
+</div>
+
+<!-- Interactive Features Description -->
+<div class="interactive-features-subsection">
+  <h3>Interactive Features:</h3>
+  <ul>
+    <li><strong>Tooltips</strong>: When hovering over any data point, a tooltip appears displaying the exact values of average years of schooling and HDI for that point (country).</li>
+    <li><strong>Zooming and Panning</strong>: Users can zoom in to see a specific area of the plot more clearly or pan across the plot to view different sections.</li>
+    <li><strong>Responsive Design</strong>: The plot adjusts to the user's screen size and can be interacted with on different devices.</li>
+  </ul>
+</div>
+
+<!-- Methodology Description -->
+<div class="methodology-description-subsection">
+  <h3>Methodology Used:</h3>
+  <ul>
+    <li><strong>Linear Model</strong>: The regression line is calculated using a linear model (`lm()` function in R), which assumes a linear relationship between the two variables.</li>
+    <li><strong>Plotly Conversion</strong>: The `ggplotly()` function from the `plotly` package converts the `ggplot2` object into an interactive plot that can be manipulated by the user.</li>
+  </ul>
+</div>
+
+```{r}
+# Load necessary libraries
+library(shiny)
+library(ggplot2)
+library(dplyr)
+
+# Load the dataset
+hdi_data <- read.csv("cleaned_HDI_data.csv")
+
+# UI definition
+ui <- fluidPage(
+    titlePanel("Impact of Environmental Factors on HDI"),
+    sidebarLayout(
+        sidebarPanel(
+            helpText("Select a year to explore the impact of material footprint per capita on HDI:"),
+            selectInput("selectedYear", "Year", 
+                        choices = 1990:2021,
+                        selected = 2021),
+            actionButton("plotBtn", "Plot Data", class = "btn-primary")
+        ),
+        mainPanel(
+            plotOutput("hdiPlot")
+        )
+    )
+)
+
+# Server logic
+server <- function(input, output) {
+
+    observeEvent(input$plotBtn, {
+        # Dynamically generate column names based on selected year
+        material_col_name <- paste0("materialfootprintpercapitatonnes", input$selectedYear)
+        hdi_col_name <- paste0("humandevelopmentindex", input$selectedYear)
+        
+        # Filter and plot data
+        output$hdiPlot <- renderPlot({
+            data <- hdi_data %>%
+                    select(!!sym(material_col_name), !!sym(hdi_col_name)) %>%
+                    na.omit() # Remove NA values
+
+            ggplot(data, aes_string(x = material_col_name, y = hdi_col_name)) +
+                geom_point() +
+                geom_smooth(method = "lm", color = "blue") +
+                labs(title = paste("Material Footprint vs HDI in", input$selectedYear),
+                     x = "Material Footprint Per Capita",
+                     y = "Human Development Index") +
+                theme_minimal()
+        })
+    })
+}
+
+# Run the application
+shinyApp(ui, server)
+cat("Execution continues...\n")
+```
+
+<!-- Sidebar Description Subsection Style -->
+<style>
+  .sidebar-description-subsection {
+    background-color: #f8f9fa;
+    border-left: 4px solid #17a2b8;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 5px;
+  }
+
+  .sidebar-description-subsection h3 {
+    color: #17a2b8;
+    margin-bottom: 15px;
+  }
+
+  .sidebar-description-subsection ul {
+    color: #212529;
+    list-style-type: disc;
+    margin-left: 20px;
+  }
+
+  .sidebar-description-subsection p {
+    color: #212529;
+  }
+</style>
+
+<!-- Scatter Plot Description Subsection Style -->
+<style>
+  .scatter-plot-description-subsection {
+    background-color: #f8f9fa;
+    border-left: 4px solid #17a2b8;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 5px;
+  }
+
+  .scatter-plot-description-subsection h3 {
+    color: #17a2b8;
+    margin-bottom: 15px;
+  }
+
+  .scatter-plot-description-subsection p {
+    color: #212529;
+  }
+</style>
+
+<!-- Sidebar Description -->
+<div class="sidebar-description-subsection">
+  <h3>Sidebar Description:</h3>
+  <p>
+    In the sidebar, users can select a year from a dropdown menu to explore how the material footprint per capita impacts the Human Development Index (HDI) for that particular year. Upon selecting a year and clicking the "Plot Data" button, the scatter plot in the main panel updates to show the relationship between the material footprint per capita (on the x-axis) and the HDI (on the y-axis) for the selected year.
+  </p>
+</div>
+
+<!-- Scatter Plot Description -->
+<div class="scatter-plot-description-subsection">
+  <h3>Scatter Plot Description:</h3>
+  <p>
+    The plot for 2021, as shown, has a number of black dots each representing a country's data point. A blue line, along with a grey shaded area indicating the confidence interval, suggests a linear regression fit to the data. The positive slope of the line indicates that there is a positive correlation between the material footprint per capita and the HDI, meaning that as the material footprint increases, the HDI tends to increase as well. The confidence interval suggests the precision of the regression estimate, with a wider area indicating more variability in the data.
+  </p>
+  <p>
+    This visualization helps to convey the potential impact of consumption (as indicated by the material footprint) on human development, offering an empirical basis for discussions on sustainable development and environmental policy.
+  </p>
+</div>
